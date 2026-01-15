@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FILM MATCHER</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="main-container">
+        <h1> FILM MATCHER</h1>
+        <p>Write a word (ENG ONLY, for now)</p>
+        
+        <div id="chat-history" class="chat-box">
+            <div class="messaggio bot">Hiiii : ) , please write a word describing a movie plot.</div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="userinput" placeholder="Ex: A long time ago in a galaxy far, far away ...">
+            <button onclick="manda_richiesta()">Start</button>
+        </div>
+    </div>
+
+    <script>
+       
+        function manda_richiesta() {
+            let input = document.getElementById("userinput");
+            let text = input.value;
+            if(!text) return;
+
+            
+            addmessaggio(text, "user");
+            input.value = "";
+
+           
+            let loaderId = addmessaggio("I'm thinking...", "bot");
+
+           
+            fetch('/ask', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg: text})
+            })
+            .then(r => r.json())
+            .then(data => {
+                
+                let loaderDiv = document.getElementById(loaderId);
+                loaderDiv.innerHTML = data.risposta;
+            })
+            .catch(error => {
+                console.error("Errore:", error);
+                document.getElementById(loaderId).innerHTML = "errooore di sistema.";
+            });
+        }
+
+       
+        function vote(tipo, film, query, btnElement) {
+         
+            let parent = btnElement.parentElement;
+            parent.innerHTML = "<i>grazie a 10000 del tuo feedback!</i>";
+
+            
+            fetch('/feedback', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    voto: tipo,    
+                    film: film,     
+                    query: query    
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                console.log("Il tuo feedback è stato inviato correttamente, ti ringrazio.");
+            });
+        }
+
+        
+        function addmessaggio(html, type) {
+            let box = document.getElementById("chat-history");
+            let div = document.createElement("div");
+            let id = "mesaggio" + Date.now();
+            div.id = id;
+            div.className = "messaggio " + type;
+            div.innerHTML = html;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight; 
+            return id;
+        }
+        
+        
+        document.getElementById("userinput").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") manda_richiesta();
+        });
+    </script>
+</body>
+</html>
